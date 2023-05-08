@@ -1,0 +1,81 @@
+LAMMPS (23 Jun 2022 - Update 1)
+# 基本设定
+units metal
+boundary p p p
+timestep        0.001
+newton on
+neighbor 0.0 bin          # neigbor设为0.0, 只计算截断半径以内的原子的势能
+read_data ../model/CuTa_huge.lmp
+Reading data file ...
+  orthogonal box = (0 0 0) to (72.3 72.3 72.3)
+  1 by 1 by 1 MPI processor grid
+  reading atoms ...
+  32000 atoms
+  read_data CPU = 0.067 seconds
+
+# 定义势函数, 势函数文件通过Zhou老师的代码进行拟合, 元素为Cu(铜)和Ta(钽)
+pair_style eam/alloy
+pair_coeff * * ../model/CuTa.eam.alloy Cu Ta
+Reading eam/alloy potential file ../model/CuTa.eam.alloy with DATE: 2022-11-23
+
+# 定义计算
+compute pte all pe/atom
+# 定义势能并输出每个原子在xyz方向上面的受力
+variable pot equal pe
+thermo 100
+thermo_style custom step pe ke etotal epair
+dump 1 all custom 1000 dump.myforce.lmc id type fx fy fz c_pte
+run 0
+WARNING: No fixes with time integration, atoms won't move (../verlet.cpp:60)
+Neighbor list info ...
+  update every 1 steps, delay 10 steps, check yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 6.3953378
+  ghost atom cutoff = 6.3953378
+  binsize = 3.1976689, bins = 23 23 23
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair eam/alloy, perpetual
+      attributes: half, newton on
+      pair build: half/bin/atomonly/newton
+      stencil: half/bin/3d
+      bin: standard
+Per MPI rank memory allocation (min/avg/max) = 23.04 | 23.04 | 23.04 Mbytes
+   Step         PotEng         KinEng         TotEng         E_pair    
+         0  -173868.42      0             -173868.42     -173868.42    
+Loop time of 1.009e-06 on 1 procs for 0 steps with 32000 atoms
+
+198.2% CPU use with 1 MPI tasks x no OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0          | 0          | 0          |   0.0 |  0.00
+Neigh   | 0          | 0          | 0          |   0.0 |  0.00
+Comm    | 0          | 0          | 0          |   0.0 |  0.00
+Output  | 0          | 0          | 0          |   0.0 |  0.00
+Modify  | 0          | 0          | 0          |   0.0 |  0.00
+Other   |            | 1.009e-06  |            |       |100.00
+
+Nlocal:          32000 ave       32000 max       32000 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:          19911 ave       19911 max       19911 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:      1.376e+06 ave   1.376e+06 max   1.376e+06 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 1376000
+Ave neighs/atom = 43
+Neighbor list builds = 0
+Dangerous builds = 0
+print "------------------------------------------------------"
+------------------------------------------------------
+print "---------------- ${pot} ev ----------------"
+---------------- -173868.420235853 ev ----------------
+print "------------------------------------------------------"
+------------------------------------------------------
+
+# 结果: Cu50Ta50: -21733.5525290429 ev
+# 结果: CoCuFeNiPd: -35939.7479428878 ev
+# 结果: CoCuFeNiPd-2M: -36128.9003788578 ev
+# 结果: CoCuFeNiPd-4M: -36145.3028604582 ev
+Total wall time: 0:00:00
